@@ -91,4 +91,71 @@ app.get('/api/teste', async (req, res) => {
     } catch (err) { res.status(500).send(err.message); }
 });
 
+// ==========================================
+// ⚔️ SISTEMA DE BATALHA (NOVA ROTA)
+// ==========================================
+app.get('/api/batalha', async (req, res) => {
+    try {
+        const { nome, classe, monstro, hp, maxhp, hpmonstro, maxhpmonstro } = req.query;
+        
+        const canvas = createCanvas(600, 400);
+        const ctx = canvas.getContext('2d');
+
+        // 1. FUNDO (Tenta carregar floresta.png, se não der usa cor sólida)
+        try {
+            const background = await loadImage(path.join(__dirname, 'floresta.png'));
+            ctx.drawImage(background, 0, 0, 600, 400);
+        } catch (e) {
+            ctx.fillStyle = '#2b2b2b'; // Cinza escuro se falhar
+            ctx.fillRect(0, 0, 600, 400);
+        }
+
+        // EFEITO DE ESCURECER O FUNDO (Pra destacar os personagens)
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+        ctx.fillRect(0, 0, 600, 400);
+
+        // 2. PLAYER (LADO ESQUERDO)
+        try {
+            const imgClasse = await loadImage(path.join(__dirname, `${classe.toLowerCase()}.png`));
+            // Espelhar a imagem (opcional, se quiser que ele olhe pra direita)
+            ctx.drawImage(imgClasse, 50, 200, 150, 150);
+        } catch (e) {
+            // Fallback se não achar sprite
+            ctx.fillStyle = 'blue'; ctx.fillRect(50, 200, 100, 100);
+        }
+
+        // BARRA DE VIDA DO PLAYER
+        ctx.fillStyle = '#333'; ctx.fillRect(50, 180, 150, 15);
+        const widthP = (parseInt(hp) / parseInt(maxhp)) * 150;
+        ctx.fillStyle = '#2ecc71'; ctx.fillRect(50, 180, widthP, 15);
+        ctx.fillStyle = '#fff'; ctx.font = '10px "RetroFont"';
+        ctx.fillText(`${nome}`, 50, 170);
+
+        // 3. MONSTRO (LADO DIREITO)
+        try {
+            const imgMonstro = await loadImage(path.join(__dirname, `${monstro.toLowerCase()}.png`));
+            ctx.drawImage(imgMonstro, 400, 200, 150, 150);
+        } catch (e) {
+            ctx.fillStyle = 'red'; ctx.fillRect(400, 200, 100, 100);
+        }
+
+        // BARRA DE VIDA DO MONSTRO
+        ctx.fillStyle = '#333'; ctx.fillRect(400, 180, 150, 15);
+        const widthM = (parseInt(hpmonstro) / parseInt(maxhpmonstro)) * 150;
+        ctx.fillStyle = '#e74c3c'; ctx.fillRect(400, 180, widthM, 15);
+        ctx.fillStyle = '#fff'; 
+        ctx.fillText(`${monstro.toUpperCase()}`, 400, 170);
+
+        // VS NO MEIO
+        ctx.fillStyle = '#ffd700';
+        ctx.font = '30px "RetroFont"';
+        ctx.fillText("VS", 270, 250);
+
+        res.setHeader('Content-Type', 'image/png');
+        res.send(canvas.toBuffer());
+    } catch (err) {
+        res.status(500).send("Erro Batalha: " + err.message);
+    }
+});
+
 module.exports = app;
