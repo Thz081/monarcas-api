@@ -101,9 +101,9 @@ app.get('/api/batalha', async (req, res) => {
         const canvas = createCanvas(600, 400);
         const ctx = canvas.getContext('2d');
 
-        // 1. FUNDO (Tenta carregar floresta.png, se não der usa cor sólida)
+    
         try {
-            const background = await loadImage(path.join(__dirname, 'floresta.png'));
+            const background = await loadImage(path.join(__dirname, 'floresta.jpg'));
             ctx.drawImage(background, 0, 0, 600, 400);
         } catch (e) {
             ctx.fillStyle = '#2b2b2b'; // Cinza escuro se falhar
