@@ -1,70 +1,87 @@
+
 const express = require('express');
-const { createCanvas, registerFont } = require('canvas');
+const { createCanvas, registerFont, loadImage } = require('canvas');
 const path = require('path');
 const app = express();
 
-// O segredo está aqui: o nome tem que ser igualzinho ao do arquivo no GitHub
 try {
     registerFont(path.join(__dirname, 'PressStart2P-Regular.ttf'), { family: 'RetroFont' });
-    console.log("Fonte carregada com sucesso!");
-} catch (e) {
-    console.log("Erro ao carregar fonte:", e.message);
-}
+} catch (e) { console.log("Erro na fonte"); }
 
-app.get('/api/teste', (req, res) => {
+app.get('/api/teste', async (req, res) => {
     try {
-        const { nome, classe, level, xp, maxxp } = req.query;
-        const canvas = createCanvas(600, 300);
+        const { nome, classe, level, xp, maxxp, hp, maxhp, mp, maxmp, money, str, vit, dex, intel, pfp } = req.query;
+        
+        // Aumentamos o canvas para caber tudo (600x400)
+        const canvas = createCanvas(600, 400);
         const ctx = canvas.getContext('2d');
 
-        // FUNDO (Aquele gradiente que já funcionou)
-        const grd = ctx.createLinearGradient(0, 0, 0, 300);
-        grd.addColorStop(0, "#0f0c29");
-        grd.addColorStop(1, "#24243e");
-        ctx.fillStyle = grd;
-        ctx.fillRect(0, 0, 600, 300);
-
-        // BORDA
+        // FUNDO E BORDA
+        ctx.fillStyle = '#0f0c29';
+        ctx.fillRect(0, 0, 600, 400);
         ctx.strokeStyle = '#ffd700';
         ctx.lineWidth = 10;
-        ctx.strokeRect(10, 10, 580, 280);
+        ctx.strokeRect(10, 10, 580, 380);
 
-
-        // TEXTOS
+        // CABEÇALHO
         ctx.fillStyle = '#ffffff';
-        ctx.font = '18px "RetroFont"';
+        ctx.font = '20px "RetroFont"';
         ctx.fillText(`HEROI: ${nome}`, 40, 60);
-        
-        ctx.font = '12px "RetroFont"';
         ctx.fillStyle = '#4db8ff';
-        ctx.fillText(`CLASSE: ${classe}`, 40, 95);
+        ctx.font = '14px "RetroFont"';
+        ctx.fillText(`CLASSE: ${classe}`, 40, 90);
 
-        // BARRA DE VIDA (HP)
-        ctx.fillStyle = '#333'; ctx.fillRect(40, 130, 250, 20); // Fundo
-        const percHP = (parseInt(req.query.hp) / parseInt(req.query.maxhp)) * 250;
-        ctx.fillStyle = '#2ecc71'; ctx.fillRect(40, 130, percHP, 20); // Verde
-        ctx.fillStyle = '#fff'; ctx.font = '10px "RetroFont"';
-        ctx.fillText(`HP: ${req.query.hp}`, 45, 145);
+        // TEXTO DE STATUS (LADO ESQUERDO)
+        ctx.fillStyle = '#fff';
+        ctx.font = '10px "RetroFont"';
+        ctx.fillText(`MOEDAS: ${money} | VIT: ${vit}`, 40, 120);
+        ctx.fillText(`FOR: ${str} | DEX: ${dex} | INT: ${intel}`, 40, 140);
 
-        // BARRA DE MANA (MP)
-        ctx.fillStyle = '#333'; ctx.fillRect(40, 165, 250, 20);
-        const percMP = (parseInt(req.query.mp) / 200) * 250; // Supus 200 como MP max
-        ctx.fillStyle = '#3498db'; ctx.fillRect(40, 165, percMP, 20); // Azul
-        ctx.fillText(`MP: ${req.query.mp}`, 45, 180);
+        // FUNÇÃO PARA DESENHAR BARRAS
+        const drawBar = (x, y, val, max, color, label) => {
+            ctx.fillStyle = '#333';
+            ctx.fillRect(x, y, 300, 25);
+            const width = (parseInt(val) / parseInt(max)) * 300;
+            ctx.fillStyle = color;
+            ctx.fillRect(x, y, width > 300 ? 300 : width, 25);
+            ctx.fillStyle = '#fff';
+            ctx.font = '10px "RetroFont"';
+            ctx.fillText(`${label}`, x - 35, y + 18);
+        };
 
-        // BARRA DE XP (Embaixo)
-        ctx.fillStyle = '#333'; ctx.fillRect(40, 230, 520, 15);
-        const percXP = (parseInt(xp) / parseInt(maxxp)) * 520;
-        ctx.fillStyle = '#f1c40f'; ctx.fillRect(40, 230, percXP, 15); // Amarelo XP
-        const perc = (parseInt(xp) / parseInt(maxxp)) * 520 || 0;
-        ctx.fillStyle = '#ff4d4d';
-        ctx.fillRect(40, 200, perc, 30);
+        // BARRAS DO SEU DESENHO
+        drawBar(50, 200, hp, maxhp, '#2ecc71', 'HP');
+        drawBar(50, 250, xp, maxxp, '#ff4d4d', 'XP');
+        drawBar(50, 300, mp, maxmp, '#3498db', 'MP');
+
+        // ÁREA DO PERSONAGEM (DIREITA)
+        // 1. Foto do Jogador (Círculo no topo direito)
+        if (pfp) {
+            try {
+                const imgPfp = await loadImage(pfp);
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(480, 100, 60, 0, Math.PI * 2);
+                ctx.closePath();
+                ctx.clip();
+                ctx.drawImage(imgPfp, 420, 40, 120, 120);
+                ctx.restore();
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 3;
+                ctx.stroke();
+            } catch (e) { console.log("Erro pfp"); }
+        }
+
+        // 2. Placeholder para Personagem da Classe
+        ctx.fillStyle = '#ffffff22';
+        ctx.fillRect(400, 180, 150, 150);
+        ctx.fillStyle = '#fff';
+        ctx.font = '8px "RetroFont"';
+        ctx.fillText("SPRITE CLASSE", 410, 260);
 
         res.setHeader('Content-Type', 'image/png');
         res.send(canvas.toBuffer());
-    } catch (err) {
-        res.status(500).send('Erro: ' + err.message);
-    }
+    } catch (err) { res.status(500).send(err.message); }
 });
 
 module.exports = app;
