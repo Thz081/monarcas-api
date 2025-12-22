@@ -65,6 +65,27 @@ app.get('/api/teste', async (req, res) => {
             } catch (e) { console.log("Erro na foto"); }
         }
 
+
+        // 2. SPRITE DA CLASSE (O MINI PERSONAGEM)
+        try {
+            // Ele tenta carregar a imagem com o nome da classe (ex: necromante.png)
+            const spritePath = path.join(__dirname, `${classe.toLowerCase()}.png`);
+            const spriteClasse = await loadImage(spritePath);
+            
+            // Desenha o bonequinho no espaço abaixo da foto do perfil
+            // Ajustei as coordenadas (420, 190) para ele ficar centralizado no lado direito
+            ctx.drawImage(spriteClasse, 420, 190, 150, 150); 
+            
+            console.log(`Sprite carregado: ${classe}`);
+        } catch (e) {
+            console.log(`Aviso: Sprite para ${classe} não encontrado. Certifique-se de que o arquivo ${classe.toLowerCase()}.png está na pasta api.`);
+            
+            // Opcional: Desenha um "default.png" ou uma sombra se não achar a classe
+            ctx.fillStyle = '#ffffff11';
+            ctx.font = '8px "RetroFont"';
+            ctx.fillText("SEM SPRITE", 450, 260);
+        }
+
         res.setHeader('Content-Type', 'image/png');
         res.send(canvas.toBuffer());
     } catch (err) { res.status(500).send(err.message); }
