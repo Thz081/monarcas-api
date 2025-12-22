@@ -29,19 +29,33 @@ app.get('/api/teste', (req, res) => {
         ctx.lineWidth = 10;
         ctx.strokeRect(10, 10, 580, 280);
 
-        // TEXTO (Agora usando 'RetroFont')
-        ctx.fillStyle = '#ffffff';
-        ctx.font = '20px "RetroFont"'; // Fonte pixelada
-        ctx.fillText(`HEROI: ${nome || 'PLAYER'}`, 40, 70);
-        
-        ctx.font = '15px "RetroFont"';
-        ctx.fillStyle = '#4db8ff';
-        ctx.fillText(`CLASSE: ${classe || 'MAGO'}`, 40, 120);
 
-        // BARRA DE XP (O visual que você já acertou!)
-        ctx.fillStyle = '#444';
-        ctx.fillRect(40, 200, 520, 30);
+        // TEXTOS
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '18px "RetroFont"';
+        ctx.fillText(`HEROI: ${nome}`, 40, 60);
         
+        ctx.font = '12px "RetroFont"';
+        ctx.fillStyle = '#4db8ff';
+        ctx.fillText(`CLASSE: ${classe}`, 40, 95);
+
+        // BARRA DE VIDA (HP)
+        ctx.fillStyle = '#333'; ctx.fillRect(40, 130, 250, 20); // Fundo
+        const percHP = (parseInt(req.query.hp) / parseInt(req.query.maxhp)) * 250;
+        ctx.fillStyle = '#2ecc71'; ctx.fillRect(40, 130, percHP, 20); // Verde
+        ctx.fillStyle = '#fff'; ctx.font = '10px "RetroFont"';
+        ctx.fillText(`HP: ${req.query.hp}`, 45, 145);
+
+        // BARRA DE MANA (MP)
+        ctx.fillStyle = '#333'; ctx.fillRect(40, 165, 250, 20);
+        const percMP = (parseInt(req.query.mp) / 200) * 250; // Supus 200 como MP max
+        ctx.fillStyle = '#3498db'; ctx.fillRect(40, 165, percMP, 20); // Azul
+        ctx.fillText(`MP: ${req.query.mp}`, 45, 180);
+
+        // BARRA DE XP (Embaixo)
+        ctx.fillStyle = '#333'; ctx.fillRect(40, 230, 520, 15);
+        const percXP = (parseInt(xp) / parseInt(maxxp)) * 520;
+        ctx.fillStyle = '#f1c40f'; ctx.fillRect(40, 230, percXP, 15); // Amarelo XP
         const perc = (parseInt(xp) / parseInt(maxxp)) * 520 || 0;
         ctx.fillStyle = '#ff4d4d';
         ctx.fillRect(40, 200, perc, 30);
