@@ -113,7 +113,7 @@ app.get('/api/batalha', async (req, res) => {
         } catch (e) {
             try {
                 // Fallback para floresta padrão se o local não existir
-                const bgPadrao = await loadImage(getImg('floresta.png'));
+                const bgPadrao = await loadImage(getImg('floresta.jpg'));
                 ctx.drawImage(bgPadrao, 0, 0, 600, 400);
             } catch (e2) {
                 ctx.fillStyle = '#2b2b2b'; 
