@@ -1,50 +1,50 @@
 const express = require('express');
-const { createCanvas } = require('canvas');
+const { createCanvas, registerFont } = require('canvas');
+const path = require('path');
 const app = express();
+
+// O segredo está aqui: o nome tem que ser igualzinho ao do arquivo no GitHub
+try {
+    registerFont(path.join(__dirname, 'PressStart2P-Regular.ttf'), { family: 'RetroFont' });
+    console.log("Fonte carregada com sucesso!");
+} catch (e) {
+    console.log("Erro ao carregar fonte:", e.message);
+}
 
 app.get('/api/teste', (req, res) => {
     try {
-        const { nome, classe, level } = req.query;
-        
-        // Canvas um pouco maior
-        const canvas = createCanvas(600, 250);
+        const { nome, classe, level, xp, maxxp } = req.query;
+        const canvas = createCanvas(600, 300);
         const ctx = canvas.getContext('2d');
 
-        // 1. FUNDO COM GRADIENTE "MONARCAS"
-        const grd = ctx.createLinearGradient(0, 0, 0, 250);
+        // FUNDO (Aquele gradiente que já funcionou)
+        const grd = ctx.createLinearGradient(0, 0, 0, 300);
         grd.addColorStop(0, "#0f0c29");
-        grd.addColorStop(0.5, "#302b63");
         grd.addColorStop(1, "#24243e");
         ctx.fillStyle = grd;
-        ctx.fillRect(0, 0, 600, 250);
+        ctx.fillRect(0, 0, 600, 300);
 
-        // 2. BORDA ESTILIZADA
-        ctx.strokeStyle = '#ffd700'; // Dourado
-        ctx.lineWidth = 8;
-        ctx.strokeRect(10, 10, 580, 230);
+        // BORDA
+        ctx.strokeStyle = '#ffd700';
+        ctx.lineWidth = 10;
+        ctx.strokeRect(10, 10, 580, 280);
 
-        // 3. TEXTO (Usando fontes genéricas que o Linux aceita melhor)
+        // TEXTO (Agora usando 'RetroFont')
         ctx.fillStyle = '#ffffff';
-        ctx.textAlign = 'left';
+        ctx.font = '20px "RetroFont"'; // Fonte pixelada
+        ctx.fillText(`HEROI: ${nome || 'PLAYER'}`, 40, 70);
         
-        // Nome do Herói
-        ctx.font = 'bold 35px '; 
-        ctx.fillText(`⚔️ ${nome || 'VIAJANTE'}`, 40, 70);
-
-        // Classe
+        ctx.font = '15px "RetroFont"';
         ctx.fillStyle = '#4db8ff';
-        ctx.font = '25px ';
-        ctx.fillText(`CLASSE: ${classe || 'APRENDIZ'}`, 40, 120);
+        ctx.fillText(`CLASSE: ${classe || 'MAGO'}`, 40, 120);
 
-        // Nível com barra de progresso fake
-        ctx.fillStyle = '#ffd700';
-        ctx.fillText(`NÍVEL: ${level || '1'}`, 40, 170);
-        
-        // Barra de vida decorativa
+        // BARRA DE XP (O visual que você já acertou!)
         ctx.fillStyle = '#444';
-        ctx.fillRect(40, 190, 520, 20);
+        ctx.fillRect(40, 200, 520, 30);
+        
+        const perc = (parseInt(xp) / parseInt(maxxp)) * 520 || 0;
         ctx.fillStyle = '#ff4d4d';
-        ctx.fillRect(40, 190, 400, 20); // 80% de vida
+        ctx.fillRect(40, 200, perc, 30);
 
         res.setHeader('Content-Type', 'image/png');
         res.send(canvas.toBuffer());
