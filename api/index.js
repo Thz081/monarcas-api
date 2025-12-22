@@ -28,12 +28,12 @@ app.get('/api/teste', (req, res) => {
         ctx.textAlign = 'left';
         
         // Nome do Herói
-        ctx.font = 'bold 35px Arial'; 
+        ctx.font = 'bold 35px '; 
         ctx.fillText(`⚔️ ${nome || 'VIAJANTE'}`, 40, 70);
 
         // Classe
         ctx.fillStyle = '#4db8ff';
-        ctx.font = '25px Arial';
+        ctx.font = '25px ';
         ctx.fillText(`CLASSE: ${classe || 'APRENDIZ'}`, 40, 120);
 
         // Nível com barra de progresso fake
