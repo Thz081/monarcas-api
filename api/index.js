@@ -15,7 +15,7 @@ app.get('/api/teste', (req, res) => {
 
         // Texto
         ctx.fillStyle = '#ffffff';
-        ctx.font = '30px sans-serif';
+        ctx.font = '30px Arial';
         ctx.fillText(`HERÓI: ${nome || 'Viajante'}`, 50, 80);
         ctx.fillText(`LVL: ${level || '1'}`, 50, 130);
 
