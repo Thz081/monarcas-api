@@ -1,14 +1,16 @@
-// 📂 api/index.js (Versão Final com Nível no Perfil)
+// 📂 api/index.js (Layout do Perfil Corrigido)
 const express = require('express');
 const { createCanvas, registerFont, loadImage } = require('canvas');
 const path = require('path');
 const fs = require('fs');
 const app = express();
 
+// Carregar Fonte
 try {
     registerFont(path.join(__dirname, 'PressStart2P-Regular.ttf'), { family: 'RetroFont' });
 } catch (e) { console.log("Erro na fonte: " + e.message); }
 
+// Helper Imagens
 const getImg = (nomeArquivo) => {
     const caminho = path.join(__dirname, 'assets', nomeArquivo);
     if (fs.existsSync(caminho)) return caminho;
@@ -16,102 +18,81 @@ const getImg = (nomeArquivo) => {
 };
 
 // ==========================================
-// 👤 ROTA DO PERFIL (COM NÍVEL AGORA!)
+// 👤 ROTA 1: PERFIL (LAYOUT AJUSTADO)
 // ==========================================
 app.get('/api/teste', async (req, res) => {
     try {
-        // 👇 ADICIONEI 'nivel' AQUI
         const { nome, classe, nivel, xp, maxxp, hp, maxhp, mp, money, str, vit, dex, intel, pfp } = req.query;
-        
         const canvas = createCanvas(600, 400);
         const ctx = canvas.getContext('2d');
 
-        // FUNDO
-        ctx.fillStyle = '#0f0c29';
-        ctx.fillRect(0, 0, 600, 400);
-        
+        // Fundo
+        ctx.fillStyle = '#0f0c29'; ctx.fillRect(0, 0, 600, 400);
         try {
             let bgClasse = getImg(`bg_${classe.toLowerCase()}.png`);
             if (bgClasse) {
                 const bg = await loadImage(bgClasse);
                 ctx.drawImage(bg, 0, 0, 600, 400);
-                ctx.fillStyle = 'rgba(0,0,0,0.7)'; 
-                ctx.fillRect(0, 0, 600, 400);
+                ctx.fillStyle = 'rgba(0,0,0,0.7)'; ctx.fillRect(0, 0, 600, 400);
             }
         } catch(e) {}
 
-        ctx.strokeStyle = '#ffd700';
-        ctx.lineWidth = 10;
-        ctx.strokeRect(10, 10, 580, 380);
+        // Borda
+        ctx.strokeStyle = '#ffd700'; ctx.lineWidth = 10; ctx.strokeRect(10, 10, 580, 380);
 
-        // CABEÇALHO
-        ctx.fillStyle = '#ffffff';
-        ctx.font = '20px "RetroFont"';
-        ctx.fillText(`HEROI: ${nome}`, 40, 60);
-        
-        ctx.fillStyle = '#4db8ff';
+        // --- TEXTOS REORGANIZADOS (SUBI TUDO UM POUCO) ---
+        ctx.fillStyle = '#ffffff'; 
+        ctx.font = '20px "RetroFont"'; 
+        ctx.fillText(`HEROI: ${nome}`, 40, 50); // Subiu pra 50
+
+        ctx.fillStyle = '#4db8ff'; 
         ctx.font = '14px "RetroFont"';
         
-        // 👇 AQUI TÁ A MUDANÇA VISUAL!
-        // Se o nível veio (existe), mostra ele. Se não, mostra "1" pra não bugar.
-        const nivelDisplay = nivel || "1";
-        ctx.fillText(`CLASSE: ${classe} | NVL: ${nivelDisplay}`, 40, 95);
+        // Separei Classe e Nível em linhas diferentes
+        ctx.fillText(`CLASSE: ${classe}`, 40, 80); 
+        
+        const nivelShow = nivel || "1";
+        ctx.fillStyle = '#ffd700'; // Dourado pro nível
+        ctx.fillText(`NÍVEL: ${nivelShow}`, 40, 105); // Nova linha pro nível
 
-        // STATUS
-        ctx.fillStyle = '#fff';
+        // Status (Desceram um pouco pra dar espaço)
+        ctx.fillStyle = '#fff'; 
         ctx.font = '10px "RetroFont"';
-        ctx.fillText(`MOEDAS: ${money} | VIT: ${vit}`, 40, 130);
-        ctx.fillText(`FOR: ${str} | DEX: ${dex} | INT: ${intel}`, 40, 155);
+        ctx.fillText(`MOEDAS: ${money} | VIT: ${vit}`, 40, 135);
+        ctx.fillText(`FOR: ${str} | DEX: ${dex} | INT: ${intel}`, 40, 160);
 
-        // BARRAS
+        // Barras (Mantidas no mesmo lugar)
         const drawBar = (x, y, val, max, color, label) => {
-            ctx.fillStyle = '#333';
-            ctx.fillRect(x, y, 300, 25);
-            let maxVal = parseInt(max) || 100;
-            let curVal = parseInt(val) || 0;
-            const width = (curVal / maxVal) * 300;
-            ctx.fillStyle = color;
-            ctx.fillRect(x, y, width > 300 ? 300 : Math.max(0, width), 25);
-            ctx.fillStyle = '#fff';
-            ctx.font = '10px "RetroFont"';
-            ctx.fillText(`${label}: ${curVal}/${maxVal}`, x + 5, y + 18);
+            ctx.fillStyle = '#333'; ctx.fillRect(x, y, 300, 25);
+            let m = parseInt(max)||100; let v = parseInt(val)||0;
+            const w = (v/m)*300;
+            ctx.fillStyle = color; ctx.fillRect(x, y, Math.max(0, w > 300 ? 300 : w), 25);
+            ctx.fillStyle = '#fff'; ctx.font = '10px "RetroFont"'; ctx.fillText(`${label}: ${v}/${m}`, x + 5, y + 18);
         };
-
         drawBar(50, 200, hp, maxhp, '#2ecc71', 'HP');
         drawBar(50, 250, xp, maxxp, '#ff4d4d', 'XP');
-        drawBar(50, 300, mp, 200, '#3498db', 'MP'); 
+        drawBar(50, 300, mp, 200, '#3498db', 'MP');
 
-        // AVATAR
+        // Avatar (Mantido)
         if (pfp) {
             try {
                 const imgPfp = await loadImage(pfp);
-                ctx.save();
-                ctx.beginPath();
-                ctx.arc(480, 110, 70, 0, Math.PI * 2);
-                ctx.closePath();
-                ctx.clip();
-                ctx.drawImage(imgPfp, 410, 40, 140, 140);
-                ctx.restore();
-                ctx.strokeStyle = '#fff'; ctx.lineWidth = 5; ctx.stroke();
+                ctx.save(); ctx.beginPath(); ctx.arc(480, 110, 70, 0, Math.PI * 2); ctx.closePath(); ctx.clip();
+                ctx.drawImage(imgPfp, 410, 40, 140, 140); ctx.restore(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 5; ctx.stroke();
             } catch (e) {}
         }
-
-        // SPRITE CLASSE
+        // Sprite Classe (Mantido)
         try {
-            let spritePath = getImg(`${classe.toLowerCase()}.png`);
-            if (!spritePath) spritePath = getImg('campones.png');
-            if (spritePath) {
-                const spriteClasse = await loadImage(spritePath);
-                ctx.drawImage(spriteClasse, 420, 190, 150, 150); 
-            }
-        } catch (e) {
-            ctx.fillStyle = '#ffffff'; ctx.fillText("?", 480, 250);
-        }
+            let sp = getImg(`${classe.toLowerCase()}.png`) || getImg('campones.png');
+            if (sp) { const i = await loadImage(sp); ctx.drawImage(i, 420, 190, 150, 150); }
+        } catch (e) { ctx.fillStyle='#fff'; ctx.fillText("?", 480, 250); }
 
-        res.setHeader('Content-Type', 'image/png');
-        res.send(canvas.toBuffer());
+        res.setHeader('Content-Type', 'image/png'); res.send(canvas.toBuffer());
     } catch (err) { res.status(500).send(err.message); }
 });
+
+
+
 
 // ==========================================
 // ⚔️ ROTA DE BATALHA & DUNGEON (/api/batalha)
