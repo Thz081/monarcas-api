@@ -1,44 +1,41 @@
-// 📂 api/index.js (COMPLETO E UNIFICADO)
+// 📂 api/index.js (Versão Final com Nível no Perfil)
 const express = require('express');
 const { createCanvas, registerFont, loadImage } = require('canvas');
 const path = require('path');
 const fs = require('fs');
 const app = express();
 
-// 1. CARREGAR A FONTE
 try {
     registerFont(path.join(__dirname, 'PressStart2P-Regular.ttf'), { family: 'RetroFont' });
 } catch (e) { console.log("Erro na fonte: " + e.message); }
 
-// 2. FUNÇÃO MÁGICA PARA PEGAR IMAGENS (COM PROTEÇÃO)
 const getImg = (nomeArquivo) => {
-    // Tenta achar o arquivo exato
     const caminho = path.join(__dirname, 'assets', nomeArquivo);
     if (fs.existsSync(caminho)) return caminho;
     return null;
 };
 
 // ==========================================
-// 👤 ROTA DO PERFIL (/api/teste) - RESTAURADA
+// 👤 ROTA DO PERFIL (COM NÍVEL AGORA!)
 // ==========================================
 app.get('/api/teste', async (req, res) => {
     try {
-        const { nome, classe, xp, maxxp, hp, maxhp, mp, money, str, vit, dex, intel, pfp } = req.query;
+        // 👇 ADICIONEI 'nivel' AQUI
+        const { nome, classe, nivel, xp, maxxp, hp, maxhp, mp, money, str, vit, dex, intel, pfp } = req.query;
         
         const canvas = createCanvas(600, 400);
         const ctx = canvas.getContext('2d');
 
-        // FUNDO E BORDA
+        // FUNDO
         ctx.fillStyle = '#0f0c29';
         ctx.fillRect(0, 0, 600, 400);
         
-        // Tenta carregar um fundo temático da classe, senão usa cor sólida
         try {
             let bgClasse = getImg(`bg_${classe.toLowerCase()}.png`);
             if (bgClasse) {
                 const bg = await loadImage(bgClasse);
                 ctx.drawImage(bg, 0, 0, 600, 400);
-                ctx.fillStyle = 'rgba(0,0,0,0.7)'; // Escurecer
+                ctx.fillStyle = 'rgba(0,0,0,0.7)'; 
                 ctx.fillRect(0, 0, 600, 400);
             }
         } catch(e) {}
@@ -51,25 +48,28 @@ app.get('/api/teste', async (req, res) => {
         ctx.fillStyle = '#ffffff';
         ctx.font = '20px "RetroFont"';
         ctx.fillText(`HEROI: ${nome}`, 40, 60);
+        
         ctx.fillStyle = '#4db8ff';
         ctx.font = '14px "RetroFont"';
-        ctx.fillText(`CLASSE: ${classe}`, 40, 95);
+        
+        // 👇 AQUI TÁ A MUDANÇA VISUAL!
+        // Se o nível veio (existe), mostra ele. Se não, mostra "1" pra não bugar.
+        const nivelDisplay = nivel || "1";
+        ctx.fillText(`CLASSE: ${classe} | NVL: ${nivelDisplay}`, 40, 95);
 
-        // STATUS LADO ESQUERDO
+        // STATUS
         ctx.fillStyle = '#fff';
         ctx.font = '10px "RetroFont"';
         ctx.fillText(`MOEDAS: ${money} | VIT: ${vit}`, 40, 130);
         ctx.fillText(`FOR: ${str} | DEX: ${dex} | INT: ${intel}`, 40, 155);
 
-        // FUNÇÃO DE BARRAS
+        // BARRAS
         const drawBar = (x, y, val, max, color, label) => {
             ctx.fillStyle = '#333';
             ctx.fillRect(x, y, 300, 25);
-            // Proteção contra divisão por zero
             let maxVal = parseInt(max) || 100;
             let curVal = parseInt(val) || 0;
             const width = (curVal / maxVal) * 300;
-            
             ctx.fillStyle = color;
             ctx.fillRect(x, y, width > 300 ? 300 : Math.max(0, width), 25);
             ctx.fillStyle = '#fff';
@@ -81,7 +81,7 @@ app.get('/api/teste', async (req, res) => {
         drawBar(50, 250, xp, maxxp, '#ff4d4d', 'XP');
         drawBar(50, 300, mp, 200, '#3498db', 'MP'); 
 
-        // AVATAR (LADO DIREITO - FOTO DO ZAP)
+        // AVATAR
         if (pfp) {
             try {
                 const imgPfp = await loadImage(pfp);
@@ -93,21 +93,19 @@ app.get('/api/teste', async (req, res) => {
                 ctx.drawImage(imgPfp, 410, 40, 140, 140);
                 ctx.restore();
                 ctx.strokeStyle = '#fff'; ctx.lineWidth = 5; ctx.stroke();
-            } catch (e) { console.log("Erro na foto"); }
+            } catch (e) {}
         }
 
-        // SPRITE DA CLASSE
+        // SPRITE CLASSE
         try {
             let spritePath = getImg(`${classe.toLowerCase()}.png`);
             if (!spritePath) spritePath = getImg('campones.png');
-            
             if (spritePath) {
                 const spriteClasse = await loadImage(spritePath);
                 ctx.drawImage(spriteClasse, 420, 190, 150, 150); 
             }
         } catch (e) {
-            ctx.fillStyle = '#ffffff';
-            ctx.fillText("?", 480, 250);
+            ctx.fillStyle = '#ffffff'; ctx.fillText("?", 480, 250);
         }
 
         res.setHeader('Content-Type', 'image/png');
