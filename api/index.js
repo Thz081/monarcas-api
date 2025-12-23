@@ -1,108 +1,95 @@
 const express = require('express');
 const { createCanvas, registerFont, loadImage } = require('canvas');
 const path = require('path');
-const fs = require('fs'); // Importante para checar se arquivo existe
+const fs = require('fs');
 const app = express();
 
-// 1. CARREGAR A FONTE
 try {
     registerFont(path.join(__dirname, 'PressStart2P-Regular.ttf'), { family: 'RetroFont' });
 } catch (e) { console.log("Erro na fonte: " + e.message); }
 
-// 2. FUNÇÃO MÁGICA PARA PEGAR IMAGENS (COM PROTEÇÃO)
 const getImg = (nomeArquivo) => {
     const caminho = path.join(__dirname, 'assets', nomeArquivo);
-    // Se não existir, retorna um placeholder ou null
     if (!fs.existsSync(caminho)) return null;
     return caminho;
 };
 
-// ==========================================
-// 👤 ROTA DO PERFIL (Mantida Igual)
-// ==========================================
-app.get('/api/teste', async (req, res) => {
-    // ... (Mantenha o código do perfil que você já tem, ele está bom)
-    // Se quiser, posso reenviar, mas focando na batalha abaixo:
-    try {
-        const { nome, classe, xp, maxxp, hp, maxhp, mp, money, str, vit, dex, intel, pfp } = req.query;
-        const canvas = createCanvas(600, 400);
-        const ctx = canvas.getContext('2d');
-        // ... (Lógica do Perfil) ...
-        // Vou resumir pra não estourar o limite, mas mantenha o seu /api/teste original
-        res.status(200).send("Use o perfil antigo aqui se quiser manter");
-    } catch (e) {}
-});
+// ... (Mantenha a rota /api/teste igual, focaremos na batalha) ...
 
-// ==========================================
-// ⚔️ SISTEMA DE BATALHA INTELIGENTE (FIX VS ENTRADA)
-// ==========================================
 app.get('/api/batalha', async (req, res) => {
     try {
         const { nome, classe, monstro, hp, maxhp, hpmonstro, maxhpmonstro, local } = req.query;
         
         const canvas = createCanvas(600, 400);
         const ctx = canvas.getContext('2d');
+        const eventoLower = monstro.toLowerCase();
 
         // =========================================
-        // A. DEFINIR O BACKGROUND CORRETO
+        // A. LÓGICA DE BACKGROUND (CORRIGIDA) 🖼️
         // =========================================
         let bgNome = 'floresta.jpg'; // Padrão
-        
-        // Se a local for dungeon, FORÇA o corredor
-        if (local === 'dungeon') bgNome = 'corredor.png'; 
+
+        // 1. Regra base do local
+        if (local === 'dungeon') bgNome = 'corredor.png';
         else if (local) bgNome = `${local.toLowerCase()}.png`;
 
+        // 2. 🚨 FIX: Se for ENTRADA, o fundo TEM QUE SER a entrada!
+        // Assim ela substitui o corredor e preenche a tela.
+        if (eventoLower === 'entrada') {
+            bgNome = 'entrada.png';
+        }
+
         let bgPath = getImg(bgNome);
-        if (!bgPath) bgPath = getImg('floresta.jpg'); // Fallback final
+        if (!bgPath) bgPath = getImg('floresta.jpg'); 
 
         try {
             const background = await loadImage(bgPath);
             ctx.drawImage(background, 0, 0, 600, 400);
         } catch (e) {
-            ctx.fillStyle = '#1a1a1a'; ctx.fillRect(0,0,600,400); // Fundo preto se falhar tudo
+            ctx.fillStyle = '#1a1a1a'; ctx.fillRect(0,0,600,400);
         }
 
-        // Escurecer um pouco pra dar clima
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
-        ctx.fillRect(0, 0, 600, 400);
+        // Filtro escuro para clima de dungeon (exceto na entrada, pra ver os detalhes)
+        if (local === 'dungeon' && eventoLower !== 'entrada') {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+            ctx.fillRect(0, 0, 600, 400);
+        }
 
         // =========================================
-        // B. VERIFICAR SE É "EVENTO" OU "COMBATE"
+        // B. LÓGICA DE DESENHO
         // =========================================
-        // Lista de coisas que NÃO TEM barra de vida
         const listaEventos = ['entrada', 'bau', 'armadilha', 'corredor', 'vazio'];
-        const isEvento = listaEventos.includes(monstro.toLowerCase());
+        const isEvento = listaEventos.includes(eventoLower);
 
-        // Carrega Sprite do "Alvo" (Monstro ou Objeto)
-        let spriteAlvoPath = getImg(`${monstro.toLowerCase()}.png`);
-        if (!spriteAlvoPath) spriteAlvoPath = getImg('goblin.png'); // Fallback visual
+        // Carrega Sprite (se precisar)
+        let spriteAlvoPath = getImg(`${eventoLower}.png`);
+        if (!spriteAlvoPath) spriteAlvoPath = getImg('goblin.png');
         const spriteAlvo = await loadImage(spriteAlvoPath);
 
-
         if (isEvento) {
-            // =====================================
-            // MODO EVENTO (SÓ MOSTRA O OBJETO)
-            // =====================================
+            // --- MODO EVENTO ---
             
-            // Desenha o objeto centralizado
-            if (monstro === 'entrada') {
-                ctx.drawImage(spriteAlvo, 150, 50, 300, 300); // Porta Grande
-            } else if (monstro === 'bau' || monstro === 'armadilha') {
-                ctx.drawImage(spriteAlvo, 225, 200, 150, 150); // Objeto no chão
+            // Só desenha sprite se for Objeto (Baú/Armadilha).
+            // Se for ENTRADA, CORREDOR ou VAZIO, não desenha nada (o fundo já conta a história).
+            if (eventoLower === 'bau' || eventoLower === 'armadilha') {
+                ctx.drawImage(spriteAlvo, 225, 200, 150, 150);
             }
             
-            // NÃO DESENHA PLAYER, NÃO DESENHA BARRAS, NÃO DESENHA VS
+            // Texto descritivo opcional
+            if (eventoLower === 'entrada') {
+                ctx.fillStyle = '#ffffff'; 
+                ctx.font = '20px "RetroFont"';
+                ctx.textAlign = 'center';
+                // ctx.fillText("ENTRADA DA MASMORRA", 300, 50); // Se quiser título
+            }
 
         } else {
-            // =====================================
-            // MODO COMBATE (PANCADARIA CLASSICA)
-            // =====================================
-
-            // 1. DESENHAR PLAYER (ESQUERDA)
+            // --- MODO COMBATE (PANCADARIA) ---
+            
+            // 1. Player
             let spritePlayerPath = getImg(`${classe.toLowerCase()}.png`);
             if (!spritePlayerPath) spritePlayerPath = getImg('campones.png');
             const spritePlayer = await loadImage(spritePlayerPath);
-            
             ctx.drawImage(spritePlayer, 50, 200, 150, 150);
 
             // Barra HP Player
@@ -111,7 +98,7 @@ app.get('/api/batalha', async (req, res) => {
             ctx.fillStyle = '#2ecc71'; ctx.fillRect(50, 180, Math.max(0, widthP), 15);
             ctx.fillStyle = '#fff'; ctx.font = '10px "RetroFont"'; ctx.fillText(nome.substring(0,15), 50, 170);
 
-            // 2. DESENHAR MONSTRO (DIREITA)
+            // 2. Monstro
             ctx.drawImage(spriteAlvo, 400, 200, 150, 150);
 
             // Barra HP Monstro
@@ -130,7 +117,7 @@ app.get('/api/batalha', async (req, res) => {
         res.send(canvas.toBuffer());
 
     } catch (err) {
-        res.status(500).send("Erro API Batalha: " + err.message);
+        res.status(500).send("Erro API: " + err.message);
     }
 });
 
